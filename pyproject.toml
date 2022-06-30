@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driver_khawasu"
+version = "0.0.1"
+authors = [
+  { name="Ameharu", email="me@ameha.ru" },
+]
+description = "Driver for Khawasu"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "msgpack",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/khawasu/python_driver"
+"Bug Tracker" = "https://github.com/khawasu/python_driver/issues"
