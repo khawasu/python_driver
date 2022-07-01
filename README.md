@@ -1,8 +1,11 @@
-![PyPI - Downloads](https://img.shields.io/pypi/dd/driver-khawasu)
+![PyPI](https://img.shields.io/pypi/v/driver-khawasu)
 
 # Description
 Provides a simple usage for Khawasu socket-server.
 
+# How to install
+
+Just make it: `pip install driver-khawasu`
 # Examples:
 ### Create new Driver Instance
 ```python
