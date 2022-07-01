@@ -1,3 +1,5 @@
+![PyPI - Downloads](https://img.shields.io/pypi/dd/driver-khawasu)
+
 # Description
 Provides a simple usage for Khawasu socket-server.
 
