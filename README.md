@@ -92,7 +92,7 @@ dev.execute("power_state", True) # Specify bool in arg
 
 # ActionType.RANGE
 dev.get("power_level") # Return float [0, 1]
-dev.execute("power_state", 0.41) # Specify float in arg
+dev.execute("power_level", 0.41) # Specify float in arg
 
 # ActionType.TEMPERATURE
 dev.get("temperature") # Return float temperature in celsius
