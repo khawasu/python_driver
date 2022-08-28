@@ -1,7 +1,12 @@
-#Description
+![PyPI](https://img.shields.io/pypi/v/driver-khawasu)
+
+# Description
 Provides a simple usage for Khawasu socket-server.
 
-#Examples:
+# How to install
+
+Just make it: `pip install driver-khawasu`
+# Examples:
 ### Create new Driver Instance
 ```python
 from driver_khawasu.driver import LogicalDriver
