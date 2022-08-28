@@ -6,12 +6,15 @@ from dataclasses import dataclass
 
 import msgpack
 
+from src.driver_khawasu.common.device import Device
+
 
 @dataclass
 class Subscribe:
     address: str
     method_name: str
     handler: any
+
 
 class LogicalDriver:
     current_supported_version = 0
@@ -24,6 +27,7 @@ class LogicalDriver:
         self.outcoming_packets = []
         self.subscribe_packets = {}
         self.subscribes = {}
+        self.devices = []
         self.idx_buf = 0
         self.DEBUG_MODE = False
 
@@ -45,8 +49,10 @@ class LogicalDriver:
             print(f"WARNING! Version from server ({self.version}) is higher than supported "
                   f"({self.current_supported_version}). Errors may occur due to the addition of new features.")
 
-
     def get(self, method_name, args=None):
+        """
+        Request to Khawasu server with method_name and args and return response
+        """
         if args is None:
             args = {}
         if not self.sem_idx.acquire(timeout=15):
@@ -65,22 +71,47 @@ class LogicalDriver:
 
         return self.incoming_packets.pop(cur_idx)["data"]
 
-    def execute(self, address, method_name, row_data: bytes):
-        self.send("action", {"action_name": method_name, "address": address, "data": row_data}, 0)
+    def get_device_by_address(self, address: str) -> Device | None:
+        for dev in self.get_devices():
+            if dev.address == address:
+                return dev
 
-    def action_get(self, address, method_name):
-        return self.get("action_fetch", {"action_name": method_name, "address": address})
+        return None
 
-    def subscribe(self, address, method_name, period, duration, handler):
+    def get_devices_force(self) -> list[Device]:
+        """Return devices list by directly request to khawasu server"""
+        self.devices = Device.get_all(self)
+        return self.devices
+
+    def get_devices(self) -> list[Device]:
+        """Return devices list by internal cache"""
+        return self.get_devices_force() if self.devices == None else self.devices
+
+    def execute(self, address, action_name, row_data: bytes):
+        """Execute action on device with row bytes as data"""
+        self.send("action", {"action_name": action_name, "address": address, "data": row_data}, 0)
+
+    def action_get(self, address, action_name):
+        """Get action state from device"""
+        return self.get("action_fetch", {"action_name": action_name, "address": address})
+
+    def subscribe(self, address, action_name, period, duration, handler):
+        """Subscribe to action
+        :param address: Address of device
+        :param action_name: Name of subscribe action on device
+        :param period: Latency between requests for data (in milliseconds)
+        :param duration: Subscription time (in seconds)
+        :param handler: Function for callback"""
         try:
-            answ = self.get("action_subscribe_new", {"address": address, "action_name": method_name, "period": period, "duration": duration})
+            answ = self.get("action_subscribe_new",
+                            {"address": address, "action_name": action_name, "period": period, "duration": duration})
         except:
             return {"data": {"status": "socket-error"}, "method": "action_subscribe_new"}
 
         if "error" in answ:
             return {"data": {"status": "webhook-add-error"}, "method": "action_subscribe"}
 
-        self.subscribes[int(answ["id"])] = Subscribe(address, method_name, handler)
+        self.subscribes[int(answ["id"])] = Subscribe(address, action_name, handler)
 
     def on_subscribe_response(self, msg):
         subscribe_data = self.subscribes[int(msg["id"])]
@@ -106,16 +137,21 @@ class LogicalDriver:
 
                 _bytes = msgpack.packb(packet_data)
                 self.sock.send(len(_bytes).to_bytes(4, 'little') + _bytes)
+
                 if self.DEBUG_MODE:
                     print("SEND", packet_data)
 
             if ready[0] and self.sem_in_packets.acquire(blocking=False):
                 msg = msgpack.unpackb(self.sock.recv(int.from_bytes(self.sock.recv(4), "little")))
+
                 if self.DEBUG_MODE:
                     print("RECV", msg)
+
                 if msg["method"] == "action_subscribe":
                     self.on_subscribe_response(msg)
                 elif msg["id"] != 0:
                     self.incoming_packets[msg["id"]] = {**msg, "recv_time": time.time()}
+
                 self.sem_in_packets.release()
+
             time.sleep(0)
